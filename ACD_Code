@@ -199,6 +199,7 @@ void loop(){
   // CONTAINER DETECTION FOR DROP-OFF (INFRARED SENSOR)
   // Adapted from: https://circuitdigest.com/microcontroller-projects/interfacing-ir-sensor-module-with-arduino
   if (IRSensorStatus == 1) { // 
+    setMotorPins('f', 0); // Stop
     digitalWrite(LEDPin, LOW); // LED LOW
     Serial.println("Drop-off Container Detected!");
     // Sucky-suck drop off motion
