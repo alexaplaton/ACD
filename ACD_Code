@@ -1,4 +1,5 @@
-// ACD CODE 
+// Autonomous Container Delivery
+// Team 7
 
 // -------------------------------------------------------
 // Global Variables
@@ -17,14 +18,9 @@ const int sensorEchoPin = 4;
 const int IRSensorPin = 11;
 const int LEDPin = 13;
 
-// define constants for comparing sensor readings
-// you will need to calibrate these values for your setup - the sensors can be affected by ambient light
-// the Arduino's analog input will read a value between 0-1023. Higher values mean *less* IR light is reflected (dark surface)
-
-// NEED TO FIND THRESHOLD FOR DETECTING THE CONTAINER //
-// const int IRThreshold = 200;   // threshold for right IR sensor to detect container
-const int reverseDistance = 5; // Distance detected for vehicle to reverse
-const int stoppingDistance = 10; // Distance detected for vehicle to stop
+// Stopping/ Reversing distances
+const int reverseDistance = 10; // Distance detected for vehicle to reverse
+const int stoppingDistance = 15; // Distance detected for vehicle to stop
 
 // Defining other non-constant variables used in program
 float distance = 0;         // distance measured by the ultrasonic sensor in centimeters
@@ -32,34 +28,36 @@ int pwmDutyCycle = 0;
 
 // -------------------------------------------------------
 // Subroutine: Initialize Motor Pins
+// Copied from Lab 3 - Solution
+// Link: https://moodle.telt.unsw.edu.au/mod/book/view.php?id=5459490&chapterid=403181
 // -------------------------------------------------------
 void initializeMotorPins(){
-	// Copied from Lab 3 - Solution
-  	// Configuration the motor pins
-    pinMode(rightMotorLogicPin1, OUTPUT);   
-    pinMode(rightMotorLogicPin2, OUTPUT);   
-    pinMode(leftMotorLogicPin1, OUTPUT);   
-    pinMode(leftMotorLogicPin2, OUTPUT);   
+  // Configuration the motor pins
+  pinMode(rightMotorLogicPin1, OUTPUT);   
+  pinMode(rightMotorLogicPin2, OUTPUT);   
+  pinMode(leftMotorLogicPin1, OUTPUT);   
+  pinMode(leftMotorLogicPin2, OUTPUT);   
 
-    // Print the motor pin configuration for wiring
-    Serial.print("Right Motor Pin 1 = ");
-    Serial.println(rightMotorLogicPin1);
-    Serial.print("Right Motor Pin 2 = ");
-    Serial.println(rightMotorLogicPin2);
-    Serial.print("Left Motor Pin 1 = ");
-    Serial.println(leftMotorLogicPin1);
-    Serial.print("Left Motor Pin 2 = ");
-    Serial.println(leftMotorLogicPin2);
+  // Print the motor pin configuration for wiring
+  Serial.print("Right Motor Pin 1 = ");
+  Serial.println(rightMotorLogicPin1);
+  Serial.print("Right Motor Pin 2 = ");
+  Serial.println(rightMotorLogicPin2);
+  Serial.print("Left Motor Pin 1 = ");
+  Serial.println(leftMotorLogicPin1);
+  Serial.print("Left Motor Pin 2 = ");
+  Serial.println(leftMotorLogicPin2);
 
-    // Initialization completed successfully
-    Serial.println("Initialization complete");
+  // Initialization completed successfully
+  Serial.println("Initialization complete");
 }
 
 // -------------------------------------------------------
 // Subroutine: Initialize Sensor Pins
+// Copied from Lecture Notes (Week2) - Scans using the HC SR04 ultrasonic sensor 
+// Link: https://moodle.telt.unsw.edu.au/mod/book/view.php?id=5459490&chapterid=403198
 // -------------------------------------------------------
 void initializeSensorPins(){
-	// Copied from Lecture Notes (Week2) - Scans using the HC SR04 ultrasonic sensor 
   // Set up the pins
   pinMode(sensorTrigPin, OUTPUT);
   digitalWrite(sensorTrigPin, LOW);
@@ -86,9 +84,10 @@ void initializeSensorPins(){
   
 // -------------------------------------------------------
 // Subroutine: Set Motor Pins
+// Adapted from Lab 3 - Solution
+// Link: https://moodle.telt.unsw.edu.au/mod/book/view.php?id=5459490&chapterid=403181
 // -------------------------------------------------------
 void setMotorPins(int currentDirection, int pwmDutyCycle){
-  // Adapted from Lab 3 - Solution
   if (currentDirection == 'f') {
       Serial.println("Forwards");
       analogWrite(leftMotorLogicPin1, 0);
@@ -107,9 +106,10 @@ void setMotorPins(int currentDirection, int pwmDutyCycle){
 
 // -------------------------------------------------------
 // Function: Returns distance based on readings from Ultrasonic
-// -------------------------------------------------------
+// Copied from Lecture Notes (Week2) - Scans using the HC SR04 ultrasonic sensor 
+// Link: https://moodle.telt.unsw.edu.au/mod/book/view.php?id=5459490&chapterid=403198
+// ------------------------------------------------------- 
 long readUltrasonic(){
-  // Copied from Lecture Notes (Week2) - Scans using the HC SR04 ultrasonic sensor 
   unsigned long clockStart;
   unsigned long clockMax;
   unsigned long timeMax = 60000;
@@ -143,7 +143,6 @@ long readUltrasonic(){
 // The setup() method runs once, when the sketch starts
 // -------------------------------------------------------
 void setup(){ 
- 
   // Initialize the serial communications
   Serial.begin(9600);
 
@@ -165,29 +164,46 @@ void setup(){
 // The loop() method runs over and over again
 // -------------------------------------------------------
 void loop(){
+  // READING INPUTS FROM ULTRASONIC AND INFRARED SENSORS
   int IRSensorStatus = digitalRead(IRSensorPin);
   distance = readUltrasonic();
+  int pickUpStatus = 0;
 
-  // Obstacle Detection
+  // PICK-UP
+  if (pickUpStatus == 0) {
+    // Sucky-suck pick up motion
+    pickUpStatus = 1;
+  }
+
+  // OBSTACLE DETECTION (ULTRASONIC SENSOR)
+  // INPUT: Distance between vehicle and obstacle is less than reversing distance
+  // OUTPUT: Vehicle stops then reverses
   if (distance <= reverseDistance) {
     setMotorPins('f', 0); // Stop
-    setMotorPins('r', 102); // Reversing speed = 40%
+    setMotorPins('f', 102); // Reversing speed = 40%
     Serial.println("Vehicle reversing!");
-  } else if (distance <= stoppingDistance) {
+  }  
+  // INPUT: Distance between vehicle and obstacle is less than stopping distance
+  // OUTPUT: Vehicle stops
+  else if (distance <= stoppingDistance) {
     setMotorPins('f', 0); // Stop
     Serial.println("Vehicle stopping!");
-  } else {
-    setMotorPins('f', 128); // Go, speed = 50%
+  }
+  // INPUT: Distance detected is greater than reversing and stopping distance
+  // OUPUT: Vehicle moves forward
+  else {
+    setMotorPins('r', 128); // Go, speed = 50%
     Serial.println("Vehicle moving forward!");
   }
 
-  // Container detection
-  if (IRSensorStatus == 1) { // Check if the pin high or not
-    // if the pin is high turn off the onboard Led
+  // CONTAINER DETECTION FOR DROP-OFF (INFRARED SENSOR)
+  // Adapted from: https://circuitdigest.com/microcontroller-projects/interfacing-ir-sensor-module-with-arduino
+  if (IRSensorStatus == 1) { // 
     digitalWrite(LEDPin, LOW); // LED LOW
-    // SUCKY SUCK MOTION
-  } else {
-    //else turn on the onboard LED
+    Serial.println("Drop-off Container Detected!");
+    // Sucky-suck drop off motion
+  }
+  else  {
     digitalWrite(LEDPin, HIGH); // LED High
   }
   delay(200);
