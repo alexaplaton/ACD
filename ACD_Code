@@ -5,13 +5,18 @@
 // Global Variables
 // -------------------------------------------------------
 // Define pins for motors
-// Wheels in the front: Pin1
-// Wheels in the back: Pin2
-int rightMotorLogicPin1 = 5;    
-int rightMotorLogicPin2 = 6;  
-int leftMotorLogicPin1 = 9;    
-int leftMotorLogicPin2 = 9;
-int pickUpMotorPin = 10;
+// Pin1: pwm Pin
+// Pin2: direction Pin
+int rightFrontMotorLogicPin1 = 5;    
+int rightFrontMotorLogicPin2 = 6;  
+int rightBackMotorLogicPin1 = 5;    
+int rightBackMotorLogicPin2 = 6;  
+
+int leftFrontMotorLogicPin1 = 9;     
+int leftFrontMotorLogicPin2 = 10;
+int leftBackMotorLogicPin1 = 9;    
+int leftBackMotorLogicPin2 = 10;
+int pickUpMotorPin = 6;
 
 // Define pin for the ultrasonic sensor
 const int sensorTrigPin = 2;
@@ -29,6 +34,7 @@ const int stoppingDistance = 10; // Distance detected for vehicle to stop
 float distance = 0;         // distance measured by the ultrasonic sensor in centimeters
 int pwmDutyCycle = 0;       // speed 
 
+int count = 0;
 // -------------------------------------------------------
 // Subroutine: Initialize Motor Pins
 // Copied from Lab 3 - Solution
@@ -36,20 +42,33 @@ int pwmDutyCycle = 0;       // speed
 // -------------------------------------------------------
 void initializeMotorPins(){
   // Configuration the motor pins
-  pinMode(rightMotorLogicPin1, OUTPUT);   
-  pinMode(rightMotorLogicPin2, OUTPUT);   
-  pinMode(leftMotorLogicPin1, OUTPUT);   
-  pinMode(leftMotorLogicPin2, OUTPUT);   
+  pinMode(rightFrontMotorLogicPin1, OUTPUT);   
+  pinMode(rightFrontMotorLogicPin2, OUTPUT);
+  pinMode(rightBackMotorLogicPin1, OUTPUT);   
+  pinMode(rightBackMotorLogicPin2, OUTPUT);    
+  pinMode(leftFrontMotorLogicPin1, OUTPUT);   
+  pinMode(leftFrontMotorLogicPin2, OUTPUT);
+  pinMode(leftBackMotorLogicPin1, OUTPUT);   
+  pinMode(leftBackMotorLogicPin2, OUTPUT);   
 
   // Print the motor pin configuration for wiring
-  Serial.print("Right Motor Pin 1 = ");
-  Serial.println(rightMotorLogicPin1);
-  Serial.print("Right Motor Pin 2 = ");
-  Serial.println(rightMotorLogicPin2);
-  Serial.print("Left Motor Pin 1 = ");
-  Serial.println(leftMotorLogicPin1);
-  Serial.print("Left Motor Pin 2 = ");
-  Serial.println(leftMotorLogicPin2);
+  Serial.print("Right-Front Motor Pin 1 = ");
+  Serial.println(rightFrontMotorLogicPin1);
+  Serial.print("Right-Front Motor Pin 2 = ");
+  Serial.println(rightFrontMotorLogicPin2);
+  Serial.print("Right-Back Motor Pin 1 = ");
+  Serial.println(rightBackMotorLogicPin1);
+  Serial.print("Right-Back Motor Pin 2 = ");
+  Serial.println(rightBackMotorLogicPin2);
+
+  Serial.print("Left-Front Motor Pin 1 = ");
+  Serial.println(leftFrontMotorLogicPin1);
+  Serial.print("Left-Front Motor Pin 2 = ");
+  Serial.println(leftFrontMotorLogicPin2);
+  Serial.print("Left-Back Motor Pin 1 = ");
+  Serial.println(leftBackMotorLogicPin1);
+  Serial.print("Left-Back Motor Pin 2 = ");
+  Serial.println(leftBackMotorLogicPin2);
 
   // Initialization completed successfully
   Serial.println("Initialization complete");
@@ -93,17 +112,26 @@ void initializeSensorPins(){
 void setMotorPins(int currentDirection, int pwmDutyCycle){
   if (currentDirection == 'f') {
       Serial.println("Forwards");
-      analogWrite(leftMotorLogicPin1, 0);
-      analogWrite(leftMotorLogicPin2, pwmDutyCycle);
-      analogWrite(rightMotorLogicPin1, 0);
-      analogWrite(rightMotorLogicPin2, pwmDutyCycle);
+      analogWrite(leftFrontMotorLogicPin1, 0);
+      analogWrite(leftFrontMotorLogicPin2, pwmDutyCycle);
+      analogWrite(leftBackMotorLogicPin1, 0);
+      analogWrite(leftBackMotorLogicPin2, pwmDutyCycle);
+
+      analogWrite(rightFrontMotorLogicPin1, 0);
+      analogWrite(rightFrontMotorLogicPin2, pwmDutyCycle);
+      analogWrite(rightBackMotorLogicPin1, 0);
+      analogWrite(rightBackMotorLogicPin2, pwmDutyCycle);
     }
   if (currentDirection == 'r') {
     Serial.println("Reverse");
-    analogWrite(leftMotorLogicPin1, pwmDutyCycle);
-    analogWrite(leftMotorLogicPin2, 0);
-    analogWrite(rightMotorLogicPin1, pwmDutyCycle);
-    analogWrite(rightMotorLogicPin2, 0);
+    analogWrite(leftFrontMotorLogicPin1, pwmDutyCycle);
+    analogWrite(leftFrontMotorLogicPin2, 0);
+    analogWrite(leftBackMotorLogicPin1, pwmDutyCycle);
+    analogWrite(leftBackMotorLogicPin2, 0);
+    analogWrite(rightFrontMotorLogicPin1, pwmDutyCycle);
+    analogWrite(rightFrontMotorLogicPin2, 0);
+    analogWrite(rightBackMotorLogicPin1, pwmDutyCycle);
+    analogWrite(rightBackMotorLogicPin2, 0);
   }
 }
 
@@ -170,6 +198,7 @@ void loop(){
   // READING INPUTS FROM ULTRASONIC AND INFRARED SENSORS
   int IRSensorStatus = digitalRead(IRSensorPin);
   distance = readUltrasonic();
+  Serial.println(distance);
   int pickUpStatus = 0;
 
   setMotorPins('f', 0); // Stop
@@ -177,8 +206,9 @@ void loop(){
   // PICK-UP
   if (pickUpStatus == 0) {
     // Sucky-suck pick up motion
+    analogWrite(pickUpMotorPin, 128);
     pickUpStatus = 1;
-    delay(200);
+    delay(500);
   }
 
   while (pickUpStatus == 1) {
@@ -188,13 +218,13 @@ void loop(){
     if (distance <= reverseDistance) {
       setMotorPins('f', 0); // Stop
       setMotorPins('f', 102); // Reversing speed = 40%
-      Serial.println("Vehicle reversing!");
+      Serial.println("Obstacle detected, Vehicle reversing!");
     }  
     // INPUT: Distance between vehicle and obstacle is less than stopping distance
     // OUTPUT: Vehicle stops
     else if (distance <= stoppingDistance) {
       setMotorPins('f', 0); // Stop
-      Serial.println("Vehicle stopping!");
+      Serial.println("Obstacle detected, Vehicle stopping!");
     }
     // INPUT: Distance detected is greater than reversing and stopping distance
     // OUPUT: Vehicle moves forward
@@ -210,11 +240,14 @@ void loop(){
       digitalWrite(LEDPin, LOW); // LED LOW
       Serial.println("Drop-off Container Detected!");
       // Sucky-suck drop off motion
-      exit(0);
+      analogWrite(pickUpMotorPin, 128);
+      // exit(0);
     }
     else  {
       digitalWrite(LEDPin, HIGH); // LED High
     }
-    delay(200);
+    delay(500);
+    Serial.println(count);
+    count++;    
   }
 }
