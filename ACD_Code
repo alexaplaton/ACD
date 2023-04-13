@@ -4,27 +4,30 @@
 // -------------------------------------------------------
 // Global Variables
 // -------------------------------------------------------
-// define pins for motors
+// Define pins for motors
+// Wheels in the front: Pin1
+// Wheels in the back: Pin2
 int rightMotorLogicPin1 = 5;    
 int rightMotorLogicPin2 = 6;  
 int leftMotorLogicPin1 = 9;    
-int leftMotorLogicPin2 = 10; 
+int leftMotorLogicPin2 = 9;
+int pickUpMotorPin = 10;
 
-// define pin for the ultrasonic sensor
+// Define pin for the ultrasonic sensor
 const int sensorTrigPin = 2;
 const int sensorEchoPin = 4;  
 
-// define pin for IR sensor
+// Define pin for IR sensor
 const int IRSensorPin = 11;
 const int LEDPin = 13;
 
 // Stopping/ Reversing distances
-const int reverseDistance = 10; // Distance detected for vehicle to reverse
-const int stoppingDistance = 15; // Distance detected for vehicle to stop
+const int reverseDistance = 5;  // Distance detected for vehicle to reverse
+const int stoppingDistance = 10; // Distance detected for vehicle to stop
 
 // Defining other non-constant variables used in program
 float distance = 0;         // distance measured by the ultrasonic sensor in centimeters
-int pwmDutyCycle = 0;
+int pwmDutyCycle = 0;       // speed 
 
 // -------------------------------------------------------
 // Subroutine: Initialize Motor Pins
@@ -169,43 +172,49 @@ void loop(){
   distance = readUltrasonic();
   int pickUpStatus = 0;
 
+  setMotorPins('f', 0); // Stop
+
   // PICK-UP
   if (pickUpStatus == 0) {
     // Sucky-suck pick up motion
     pickUpStatus = 1;
+    delay(200);
   }
 
-  // OBSTACLE DETECTION (ULTRASONIC SENSOR)
-  // INPUT: Distance between vehicle and obstacle is less than reversing distance
-  // OUTPUT: Vehicle stops then reverses
-  if (distance <= reverseDistance) {
-    setMotorPins('f', 0); // Stop
-    setMotorPins('f', 102); // Reversing speed = 40%
-    Serial.println("Vehicle reversing!");
-  }  
-  // INPUT: Distance between vehicle and obstacle is less than stopping distance
-  // OUTPUT: Vehicle stops
-  else if (distance <= stoppingDistance) {
-    setMotorPins('f', 0); // Stop
-    Serial.println("Vehicle stopping!");
-  }
-  // INPUT: Distance detected is greater than reversing and stopping distance
-  // OUPUT: Vehicle moves forward
-  else {
-    setMotorPins('r', 128); // Go, speed = 50%
-    Serial.println("Vehicle moving forward!");
-  }
+  while (pickUpStatus == 1) {
+    // OBSTACLE DETECTION (ULTRASONIC SENSOR)
+    // INPUT: Distance between vehicle and obstacle is less than reversing distance
+    // OUTPUT: Vehicle stops then reverses
+    if (distance <= reverseDistance) {
+      setMotorPins('f', 0); // Stop
+      setMotorPins('f', 102); // Reversing speed = 40%
+      Serial.println("Vehicle reversing!");
+    }  
+    // INPUT: Distance between vehicle and obstacle is less than stopping distance
+    // OUTPUT: Vehicle stops
+    else if (distance <= stoppingDistance) {
+      setMotorPins('f', 0); // Stop
+      Serial.println("Vehicle stopping!");
+    }
+    // INPUT: Distance detected is greater than reversing and stopping distance
+    // OUPUT: Vehicle moves forward
+    else {
+      setMotorPins('r', 128); // Go, speed = 50%
+      Serial.println("Vehicle moving forward!");
+    }
 
-  // CONTAINER DETECTION FOR DROP-OFF (INFRARED SENSOR)
-  // Adapted from: https://circuitdigest.com/microcontroller-projects/interfacing-ir-sensor-module-with-arduino
-  if (IRSensorStatus == 1) { // 
-    setMotorPins('f', 0); // Stop
-    digitalWrite(LEDPin, LOW); // LED LOW
-    Serial.println("Drop-off Container Detected!");
-    // Sucky-suck drop off motion
+    // CONTAINER DETECTION FOR DROP-OFF (INFRARED SENSOR)
+    // Adapted from: https://circuitdigest.com/microcontroller-projects/interfacing-ir-sensor-module-with-arduino
+    if (IRSensorStatus == 1) { // 
+      setMotorPins('f', 0); // Stop
+      digitalWrite(LEDPin, LOW); // LED LOW
+      Serial.println("Drop-off Container Detected!");
+      // Sucky-suck drop off motion
+      exit(0);
+    }
+    else  {
+      digitalWrite(LEDPin, HIGH); // LED High
+    }
+    delay(200);
   }
-  else  {
-    digitalWrite(LEDPin, HIGH); // LED High
-  }
-  delay(200);
 }
