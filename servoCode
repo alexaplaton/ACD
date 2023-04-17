@@ -1,0 +1,38 @@
+#include <Servo.h>
+
+Servo servo1;
+// Servo servo2;
+
+int pos1 = 0;
+int pos2 = 0;
+
+void setup() {
+  servo1.attach(3); // Attach servo1 to pin 9
+  // servo2.attach(10); // Attach servo2 to pin 10
+}
+
+void loop() {
+  // Move servo1 from 0 to 180 degrees
+  for (pos1 = 0; pos1 <= 180; pos1 += 1) {
+    servo1.write(pos1);
+    delay(15); // Wait for the servo to move to the next position
+  }
+  
+  // Move servo1 from 180 to 0 degrees
+  for (pos1 = 180; pos1 >= 0; pos1 -= 1) {
+    servo1.write(pos1);
+    delay(15); // Wait for the servo to move to the next position
+  }
+  
+  // Move servo2 from 0 to 180 degrees
+  // for (pos2 = 0; pos2 <= 180; pos2 += 1) {
+  //   servo2.write(pos2);
+  //   delay(15); // Wait for the servo to move to the next position
+  // }
+  
+  // // Move servo2 from 180 to 0 degrees
+  // for (pos2 = 180; pos2 >= 0; pos2 -= 1) {
+  //   servo2.write(pos2);
+  //   delay(15); // Wait for the servo to move to the next position
+  // }
+}
