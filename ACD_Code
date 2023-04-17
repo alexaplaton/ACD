@@ -1,22 +1,21 @@
 // Autonomous Container Delivery
 // Team 7
-
 // -------------------------------------------------------
 // Global Variables
 // -------------------------------------------------------
 // Define pins for motors
-// Pin1: pwm Pin
-// Pin2: direction Pin
 int rightFrontMotorLogicPin1 = 5;    
-int rightFrontMotorLogicPin2 = 6;  
-int rightBackMotorLogicPin1 = 5;    
+// int rightFrontMotorLogicPin2 = 6;  
+// int rightBackMotorLogicPin1 = 5;    
 int rightBackMotorLogicPin2 = 6;  
 
+int pickUpMotorPin1 = 5;
+int pickUpMotorPin2 = 6;
+
 int leftFrontMotorLogicPin1 = 9;     
-int leftFrontMotorLogicPin2 = 10;
-int leftBackMotorLogicPin1 = 9;    
+// int leftFrontMotorLogicPin2 = 10;
+// int leftBackMotorLogicPin1 = 9;    
 int leftBackMotorLogicPin2 = 10;
-int pickUpMotorPin = 6;
 
 // Define pin for the ultrasonic sensor
 const int sensorTrigPin = 2;
@@ -43,30 +42,33 @@ int count = 0;
 void initializeMotorPins(){
   // Configuration the motor pins
   pinMode(rightFrontMotorLogicPin1, OUTPUT);   
-  pinMode(rightFrontMotorLogicPin2, OUTPUT);
-  pinMode(rightBackMotorLogicPin1, OUTPUT);   
+  // pinMode(rightFrontMotorLogicPin2, OUTPUT);
+  // pinMode(rightBackMotorLogicPin1, OUTPUT);   
   pinMode(rightBackMotorLogicPin2, OUTPUT);    
   pinMode(leftFrontMotorLogicPin1, OUTPUT);   
-  pinMode(leftFrontMotorLogicPin2, OUTPUT);
-  pinMode(leftBackMotorLogicPin1, OUTPUT);   
+  // pinMode(leftFrontMotorLogicPin2, OUTPUT);
+  // pinMode(leftBackMotorLogicPin1, OUTPUT);   
   pinMode(leftBackMotorLogicPin2, OUTPUT);   
+
+  pinMode(pickUpMotorPin1, OUTPUT);
+  pinMode(pickUpMotorPin2, OUTPUT);
 
   // Print the motor pin configuration for wiring
   Serial.print("Right-Front Motor Pin 1 = ");
   Serial.println(rightFrontMotorLogicPin1);
   Serial.print("Right-Front Motor Pin 2 = ");
-  Serial.println(rightFrontMotorLogicPin2);
+  // Serial.println(rightFrontMotorLogicPin2);
   Serial.print("Right-Back Motor Pin 1 = ");
-  Serial.println(rightBackMotorLogicPin1);
+  // Serial.println(rightBackMotorLogicPin1);
   Serial.print("Right-Back Motor Pin 2 = ");
   Serial.println(rightBackMotorLogicPin2);
 
   Serial.print("Left-Front Motor Pin 1 = ");
   Serial.println(leftFrontMotorLogicPin1);
   Serial.print("Left-Front Motor Pin 2 = ");
-  Serial.println(leftFrontMotorLogicPin2);
+  // Serial.println(leftFrontMotorLogicPin2);
   Serial.print("Left-Back Motor Pin 1 = ");
-  Serial.println(leftBackMotorLogicPin1);
+  // Serial.println(leftBackMotorLogicPin1);
   Serial.print("Left-Back Motor Pin 2 = ");
   Serial.println(leftBackMotorLogicPin2);
 
@@ -80,12 +82,11 @@ void initializeMotorPins(){
 // Link: https://moodle.telt.unsw.edu.au/mod/book/view.php?id=5459490&chapterid=403198
 // -------------------------------------------------------
 void initializeSensorPins(){
-  // Set up the pins
+  // Set up the Ultrasonic Sensor pins
   pinMode(sensorTrigPin, OUTPUT);
   digitalWrite(sensorTrigPin, LOW);
   pinMode(sensorEchoPin, INPUT);
 
-  // Print the pin configuration for wiring
   Serial.print("sensor Trig Pin = ");
   Serial.println(sensorTrigPin);
   Serial.print("sensor Echo Pin = ");
@@ -113,24 +114,34 @@ void setMotorPins(int currentDirection, int pwmDutyCycle){
   if (currentDirection == 'f') {
       Serial.println("Forwards");
       analogWrite(leftFrontMotorLogicPin1, 0);
-      analogWrite(leftFrontMotorLogicPin2, pwmDutyCycle);
-      analogWrite(leftBackMotorLogicPin1, 0);
+      // analogWrite(leftFrontMotorLogicPin2, pwmDutyCycle);
+      // analogWrite(leftBackMotorLogicPin1, 0);
       analogWrite(leftBackMotorLogicPin2, pwmDutyCycle);
-
       analogWrite(rightFrontMotorLogicPin1, 0);
-      analogWrite(rightFrontMotorLogicPin2, pwmDutyCycle);
-      analogWrite(rightBackMotorLogicPin1, 0);
+      // analogWrite(rightFrontMotorLogicPin2, pwmDutyCycle);
+      // analogWrite(rightBackMotorLogicPin1, 0);
       analogWrite(rightBackMotorLogicPin2, pwmDutyCycle);
     }
   if (currentDirection == 'r') {
     Serial.println("Reverse");
     analogWrite(leftFrontMotorLogicPin1, pwmDutyCycle);
-    analogWrite(leftFrontMotorLogicPin2, 0);
-    analogWrite(leftBackMotorLogicPin1, pwmDutyCycle);
+    // analogWrite(leftFrontMotorLogicPin2, 0);
+    // analogWrite(leftBackMotorLogicPin1, pwmDutyCycle);
     analogWrite(leftBackMotorLogicPin2, 0);
     analogWrite(rightFrontMotorLogicPin1, pwmDutyCycle);
-    analogWrite(rightFrontMotorLogicPin2, 0);
-    analogWrite(rightBackMotorLogicPin1, pwmDutyCycle);
+    // analogWrite(rightFrontMotorLogicPin2, 0);
+    // analogWrite(rightBackMotorLogicPin1, pwmDutyCycle);
+    analogWrite(rightBackMotorLogicPin2, 0);
+  }
+  if (currentDirection == 's') {
+    Serial.println("Stop");
+    analogWrite(leftFrontMotorLogicPin1, 0);
+    // analogWrite(leftFrontMotorLogicPin2, 0);
+    // analogWrite(leftBackMotorLogicPin1, 0);
+    analogWrite(leftBackMotorLogicPin2, 0);
+    analogWrite(rightFrontMotorLogicPin1, 0);
+    // analogWrite(rightFrontMotorLogicPin2, 0);
+    // analogWrite(rightBackMotorLogicPin1, 0);
     analogWrite(rightBackMotorLogicPin2, 0);
   }
 }
@@ -196,22 +207,21 @@ void setup(){
 // -------------------------------------------------------
 void loop(){
   // READING INPUTS FROM ULTRASONIC AND INFRARED SENSORS
-  int IRSensorStatus = digitalRead(IRSensorPin);
-  distance = readUltrasonic();
-  Serial.println(distance);
+  // int IRSensorStatus = digitalRead(IRSensorPin);
   int pickUpStatus = 0;
-
-  setMotorPins('f', 0); // Stop
 
   // PICK-UP
   if (pickUpStatus == 0) {
     // Sucky-suck pick up motion
-    analogWrite(pickUpMotorPin, 128);
+    analogWrite(pickUpMotorPin1, 0);
+    analogWrite(pickUpMotorPin2, 128);
     pickUpStatus = 1;
     delay(500);
   }
 
   while (pickUpStatus == 1) {
+    distance = readUltrasonic(); 
+    Serial.println(distance);
     // OBSTACLE DETECTION (ULTRASONIC SENSOR)
     // INPUT: Distance between vehicle and obstacle is less than reversing distance
     // OUTPUT: Vehicle stops then reverses
@@ -235,19 +245,21 @@ void loop(){
 
     // CONTAINER DETECTION FOR DROP-OFF (INFRARED SENSOR)
     // Adapted from: https://circuitdigest.com/microcontroller-projects/interfacing-ir-sensor-module-with-arduino
-    if (IRSensorStatus == 1) { // 
-      setMotorPins('f', 0); // Stop
-      digitalWrite(LEDPin, LOW); // LED LOW
-      Serial.println("Drop-off Container Detected!");
-      // Sucky-suck drop off motion
-      analogWrite(pickUpMotorPin, 128);
-      // exit(0);
-    }
-    else  {
-      digitalWrite(LEDPin, HIGH); // LED High
-    }
+    // if (IRSensorStatus == 1) { // 
+    //   setMotorPins('s', 0); // Stop
+    //   digitalWrite(LEDPin, LOW); // LED LOW
+    //   Serial.println("Drop-off Container Detected!");
+    //   // Sucky-suck drop off motion
+    //   analogWrite(pickUpMotorPin1, 0);
+    //   analogWrite(pickUpMotorPin2, 128);
+    //   // exit(0);
+    // }
+    // else  {
+    //   digitalWrite(LEDPin, HIGH); // LED High
+    // }
     delay(500);
     Serial.println(count);
     count++;    
+    exit(0);
   }
 }
