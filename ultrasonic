@@ -1,0 +1,81 @@
+// =======================================================
+// ENGG1000 - Computing Technical Stream
+// Infrared Array
+// Written by Michael Schofield August 2014
+// Scans using the HC SR04 ultrasonic sensor 
+// ======================================================= 
+
+// -------------------------------------------------------
+// Global Variables
+// -------------------------------------------------------
+int sensorTrigPin = 2;    
+int sensorEchoPin = 4;    
+
+long readUltrasonic(){
+  unsigned long clockStart;
+  unsigned long clockMax;
+  unsigned long timeMax = 60000;
+  float distance;
+  
+  // Send the 10 usec trigger pulse
+  digitalWrite(sensorTrigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(sensorTrigPin, LOW);
+  
+  // Once triggered it take about 500 usec for the echo pin to go high
+  // Set the max wait time
+  clockMax = micros() + 1000;
+
+  // Wait for the echo pin to go high
+  while ((micros() < clockMax) && (digitalRead(sensorEchoPin) == LOW));
+  
+  // Initialise the echo timer
+  clockStart = micros();
+  clockMax = clockStart + timeMax;
+
+  // Read the sensor delay time by waiting for the echo pin to go low
+  while ((micros() < clockMax) && (digitalRead(sensorEchoPin) == HIGH));
+  
+  // Calculate the distance in cm
+  distance = float(micros() - clockStart) / 58.0;
+  return distance;
+}
+
+// -------------------------------------------------------
+// The setup() method runs once, when the sketch starts
+// -------------------------------------------------------
+void setup(){  
+  
+  // Initialize the serial communications
+  Serial.begin(9600); 
+  
+  // Print the program details
+  Serial.println("-------------------------------------");
+  Serial.println("Program: HC-SR04"); 
+  Serial.println("Initializing ...");
+
+  // Set up the pins
+  pinMode(sensorTrigPin, OUTPUT);
+  digitalWrite(sensorTrigPin, LOW);
+  pinMode(sensorEchoPin, INPUT);
+
+  // Print the pin configuration for wiring
+  Serial.print("sensor Trig Pin = ");
+  Serial.println(sensorTrigPin);
+  Serial.print("sensor Echo Pin = ");
+  Serial.println(sensorEchoPin);
+
+  // Initialization completed successfully
+  Serial.println("Initialization complete");
+
+}
+
+// -------------------------------------------------------
+// The loop() method runs over and over again
+// -------------------------------------------------------
+void loop(){
+  
+  long distance = readUltrasonic();
+  Serial.println(distance);
+  delay(200);
+}
