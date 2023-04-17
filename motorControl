@@ -1,0 +1,167 @@
+// Motor controls
+
+// -------------------------------------------------------
+// Global Variables
+// -------------------------------------------------------
+int rightFrontMotorLogicPin1 = 5;    
+// int rightFrontMotorLogicPin2 = 6;  
+// int rightBackMotorLogicPin1 = 5;    
+int rightBackMotorLogicPin2 = 6;  
+
+// 
+int leftFrontMotorLogicPin1 = 9;     
+// int leftFrontMotorLogicPin2 = 10;
+// int leftBackMotorLogicPin1 = 9;    
+int leftBackMotorLogicPin2 = 10; 
+int pwmDutyCycle = 0;
+
+// -------------------------------------------------------
+// Subroutine: Initialize Motor Pins
+// Copied from Lab 3 - Solution
+// Link: https://moodle.telt.unsw.edu.au/mod/book/view.php?id=5459490&chapterid=403181
+// -------------------------------------------------------
+void initializeMotorPins(){
+  // Configuration the motor pins
+  pinMode(rightFrontMotorLogicPin1, OUTPUT);   
+  // pinMode(rightFrontMotorLogicPin2, OUTPUT);
+ //  pinMode(rightBackMotorLogicPin1, OUTPUT);   
+  pinMode(rightBackMotorLogicPin2, OUTPUT);    
+  pinMode(leftFrontMotorLogicPin1, OUTPUT);   
+  // pinMode(leftFrontMotorLogicPin2, OUTPUT);
+  // pinMode(leftBackMotorLogicPin1, OUTPUT);   
+  pinMode(leftBackMotorLogicPin2, OUTPUT);   
+
+  // Print the motor pin configuration for wiring
+  Serial.print("Right-Front Motor Pin 1 = ");
+  Serial.println(rightFrontMotorLogicPin1);
+  Serial.print("Right-Front Motor Pin 2 = ");
+  // Serial.println(rightFrontMotorLogicPin2);
+  Serial.print("Right-Back Motor Pin 1 = ");
+  // Serial.println(rightBackMotorLogicPin1);
+  Serial.print("Right-Back Motor Pin 2 = ");
+  Serial.println(rightBackMotorLogicPin2);
+
+  Serial.print("Left-Front Motor Pin 1 = ");
+  Serial.println(leftFrontMotorLogicPin1);
+  Serial.print("Left-Front Motor Pin 2 = ");
+  // Serial.println(leftFrontMotorLogicPin2);
+  Serial.print("Left-Back Motor Pin 1 = ");
+  // Serial.println(leftBackMotorLogicPin1);
+  Serial.print("Left-Back Motor Pin 2 = ");
+  Serial.println(leftBackMotorLogicPin2);
+
+  // Initialization completed successfully
+  Serial.println("Initialization complete");
+}
+
+// -------------------------------------------------------
+// The setup() method runs once, when the sketch starts
+// -------------------------------------------------------
+void setup(){ 
+ 
+  // Initialize the serial communications
+  Serial.begin(9600);
+
+  initializeMotorPins();
+  
+}
+
+// -------------------------------------------------------
+// The loop() method runs over and over again
+// -------------------------------------------------------
+void loop(){
+  
+  char incomingByte = 0;
+
+  // See if there's incoming serial data:
+  if (Serial.available() > 0) {
+
+    // Read the oldest byte in the serial buffer:
+    incomingByte = Serial.read();
+    
+    // Set the motor pins appropriately
+    // Use the motor logic from lectures
+    
+    // Pin1  Pin2  Motor
+    //  0     0    Idle
+    //  0     5v   Forward
+    //  5v    0    Reverse
+    //  5v    5v   Idle
+    
+    // ReftMotor  LeftMotor  Direction
+    //    For        For      Forward
+    //    For        Rev      Turn Left
+    //    Rev        For      Turn Right
+    //    Rev        Rev      Backwards
+
+    // Is this a direction; 'f' 'r' 's'
+  if (incomingByte == 'f') {
+    Serial.println("Forwards");
+    analogWrite(leftFrontMotorLogicPin1, 0);
+    // analogWrite(leftFrontMotorLogicPin2, pwmDutyCycle);
+    // analogWrite(leftBackMotorLogicPin1, 0);
+    analogWrite(leftBackMotorLogicPin2, pwmDutyCycle);
+    analogWrite(rightFrontMotorLogicPin1, 0);
+    // analogWrite(rightFrontMotorLogicPin2, pwmDutyCycle);
+    // analogWrite(rightBackMotorLogicPin1, 0);
+    analogWrite(rightBackMotorLogicPin2, pwmDutyCycle);
+  }
+  if (incomingByte == 'r') {
+    Serial.println("Reverse");
+    analogWrite(leftFrontMotorLogicPin1, pwmDutyCycle);
+    // analogWrite(leftFrontMotorLogicPin2, 0);
+    // analogWrite(leftBackMotorLogicPin1, pwmDutyCycle);
+    analogWrite(leftBackMotorLogicPin2, 0);
+    analogWrite(rightFrontMotorLogicPin1, pwmDutyCycle);
+    // analogWrite(rightFrontMotorLogicPin2, 0);
+    // analogWrite(rightBackMotorLogicPin1, pwmDutyCycle);
+    analogWrite(rightBackMotorLogicPin2, 0);
+  }
+  if (incomingByte == 's') {
+    Serial.println("Stop");
+    analogWrite(leftFrontMotorLogicPin1, 0);
+    // analogWrite(leftFrontMotorLogicPin2, 0);
+    // analogWrite(leftBackMotorLogicPin1, 0);
+    analogWrite(leftBackMotorLogicPin2, 0);
+    analogWrite(rightFrontMotorLogicPin1, 0);
+    // analogWrite(rightFrontMotorLogicPin2, 0);
+    // analogWrite(rightBackMotorLogicPin1, 0);
+    analogWrite(rightBackMotorLogicPin2, 0);
+  }
+    
+    // Is this a motor speed 0 - 5
+    if (incomingByte == '0') {
+      Serial.println("Stop");
+      pwmDutyCycle = 0;
+    }
+    if (incomingByte == '1') {
+      Serial.println("Speed = 10%");
+      pwmDutyCycle = 26;
+    }
+    if (incomingByte == '2') {
+      Serial.println("Speed = 20%");
+      pwmDutyCycle = 51;
+    }
+    if (incomingByte == '3') {
+      Serial.println("Speed = 30%");
+      pwmDutyCycle = 77;
+    }
+    if (incomingByte == '4') {
+      Serial.println("Speed = 40%");
+      pwmDutyCycle = 102;
+    }
+    if (incomingByte == '5') {
+      Serial.println("Speed = 50%");
+      pwmDutyCycle = 128;
+    }
+    if (incomingByte == '6') {
+      Serial.println("Speed = 100");
+      pwmDutyCycle = 256;
+    }
+  
+  }
+
+  // Wait for a character to arrive
+  delay(10);
+
+}
