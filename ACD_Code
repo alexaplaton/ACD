@@ -3,6 +3,8 @@
 // -------------------------------------------------------
 // Global Variables
 // -------------------------------------------------------
+#include <Servo.h>
+
 // Define pins for motors
 int rightFrontMotorLogicPin1 = 5;    
 // int rightFrontMotorLogicPin2 = 6;  
@@ -16,6 +18,10 @@ int leftFrontMotorLogicPin1 = 9;
 // int leftFrontMotorLogicPin2 = 10;
 // int leftBackMotorLogicPin1 = 9;    
 int leftBackMotorLogicPin2 = 10;
+
+// Servos
+Servo servo1;
+Servo servo2;
 
 // Define pin for the ultrasonic sensor
 const int sensorTrigPin = 2;
@@ -33,6 +39,7 @@ const int stoppingDistance = 10; // Distance detected for vehicle to stop
 float distance = 0;         // distance measured by the ultrasonic sensor in centimeters
 int pwmDutyCycle = 0;       // speed 
 
+// Debugging purposes
 int count = 0;
 // -------------------------------------------------------
 // Subroutine: Initialize Motor Pins
@@ -180,6 +187,24 @@ long readUltrasonic(){
   distance = float(micros() - clockStart) / 58.0;
   return distance;
 }
+  
+// -------------------------------------------------------
+// Subroutine: Change position of servos
+// -------------------------------------------------------
+void setServoPosition(Servo servo, int posInit, int posFinal){
+  int pos1 = 0;
+  if (posInit < posFinal) {
+    for (pos1 = posInit; pos1 <= posFinal; pos1 += 1) {
+    servo.write(pos1);
+    delay(15); // Wait for the servo to move to the next position
+    }
+  } else {
+    for (pos1 = posInit; pos1 >= posFinal; pos1 -= 1) {
+    servo.write(pos1);
+    delay(15); // Wait for the servo to move to the next position
+    }
+  }
+}
 
 // -------------------------------------------------------
 // The setup() method runs once, when the sketch starts
@@ -197,6 +222,10 @@ void setup(){
   initializeMotorPins();
   initializeSensorPins();
 
+  // Set up servo pins
+  servo1.attach(3); // Attach servo1 to pin 3
+  servo2.attach(7); // Attach servo2 to pin 7
+
   // Initialization completed successfully
   Serial.println("Initialization complete");
   
@@ -212,9 +241,13 @@ void loop(){
 
   // PICK-UP
   if (pickUpStatus == 0) {
-    // Sucky-suck pick up motion
+    // Start the pump
     analogWrite(pickUpMotorPin1, 0);
     analogWrite(pickUpMotorPin2, 128);
+
+    // Servo movement
+    setServoPosition(servo1, 0, 60);
+    setServoPosition(servo2, 0, 90);
     pickUpStatus = 1;
     delay(500);
   }
@@ -243,23 +276,25 @@ void loop(){
       Serial.println("Vehicle moving forward!");
     }
 
-    // CONTAINER DETECTION FOR DROP-OFF (INFRARED SENSOR)
-    // Adapted from: https://circuitdigest.com/microcontroller-projects/interfacing-ir-sensor-module-with-arduino
-    // if (IRSensorStatus == 1) { // 
-    //   setMotorPins('s', 0); // Stop
-    //   digitalWrite(LEDPin, LOW); // LED LOW
-    //   Serial.println("Drop-off Container Detected!");
-    //   // Sucky-suck drop off motion
-    //   analogWrite(pickUpMotorPin1, 0);
-    //   analogWrite(pickUpMotorPin2, 128);
-    //   // exit(0);
-    // }
-    // else  {
-    //   digitalWrite(LEDPin, HIGH); // LED High
-    // }
+    CONTAINER DETECTION FOR DROP-OFF (INFRARED SENSOR)
+    Adapted from: https://circuitdigest.com/microcontroller-projects/interfacing-ir-sensor-module-with-arduino
+    if (IRSensorStatus == 1) { // 
+      setMotorPins('s', 0); // Stop
+      digitalWrite(LEDPin, LOW); // LED LOW
+      Serial.println("Drop-off Container Detected!");
+      // Servo movement
+
+      // Stop the pump
+      analogWrite(pickUpMotorPin1, 0);
+      analogWrite(pickUpMotorPin2, 0);
+      // exit(0);
+    }
+    else  {
+      digitalWrite(LEDPin, HIGH); // LED High
+    }
     delay(500);
     Serial.println(count);
     count++;    
-    exit(0);
+    // exit(0);
   }
 }
