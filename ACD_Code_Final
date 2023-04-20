@@ -1,0 +1,258 @@
+// Autonomous Container Delivery
+// Team 7
+// -------------------------------------------------------
+// Global Variables
+// -------------------------------------------------------
+#include <Servo.h>
+
+// Define pins for motors
+// Pump pins
+int pickUpMotorPin1 = 5;
+int pickUpMotorPin2 = 6;
+
+// Wheel pins
+int moveMotorPin1 = 9;       
+int moveMotorPin2 = 10;
+
+// Servos
+Servo servo1;
+Servo servo2;
+
+// Define pin for the ultrasonic sensor
+const int sensorTrigPin = 2;
+const int sensorEchoPin = 4;  
+
+// Define pin for IR sensor
+const int IRSensorPin = 11;
+const int LEDPin = 13;
+
+// Stopping/ Reversing distances
+const int reverseDistance = 5;  // Distance detected for vehicle to reverse
+const int stoppingDistance = 10; // Distance detected for vehicle to stop
+
+// Defining other non-constant variables used in program
+float distance = 0;         // distance measured by the ultrasonic sensor in centimeters
+int pwmDutyCycle = 0;       // speed 
+
+// Debugging purposes
+int count = 0;
+// -------------------------------------------------------
+// Subroutine: Initialize Motor Pins
+// Copied from Lab 3 - Solution
+// Link: https://moodle.telt.unsw.edu.au/mod/book/view.php?id=5459490&chapterid=403181
+// -------------------------------------------------------
+void initializeMotorPins(){
+  // Configuration the motor pins
+  pinMode(moveMotorPin1, OUTPUT);    
+  pinMode(moveMotorPin2, OUTPUT);   
+
+  pinMode(pickUpMotorPin1, OUTPUT);
+  pinMode(pickUpMotorPin2, OUTPUT);
+
+  // Print the motor pin configuration for wiring
+  Serial.print("Left-Front Motor Pin 1 = ");
+  Serial.println(moveMotorPin1);
+  Serial.print("Left-Back Motor Pin 2 = ");
+  Serial.println(moveMotorPin2);
+
+  // Initialization completed successfully
+  Serial.println("Initialization complete");
+}
+
+// -------------------------------------------------------
+// Subroutine: Initialize Sensor Pins
+// Copied from Lecture Notes (Week2) - Scans using the HC SR04 ultrasonic sensor 
+// Link: https://moodle.telt.unsw.edu.au/mod/book/view.php?id=5459490&chapterid=403198
+// -------------------------------------------------------
+void initializeSensorPins(){
+  // Set up the Ultrasonic Sensor pins
+  pinMode(sensorTrigPin, OUTPUT);
+  digitalWrite(sensorTrigPin, LOW);
+  pinMode(sensorEchoPin, INPUT);
+
+  Serial.print("sensor Trig Pin = ");
+  Serial.println(sensorTrigPin);
+  Serial.print("sensor Echo Pin = ");
+  Serial.println(sensorEchoPin);
+
+  // Set up IR Sensor pins
+  pinMode(IRSensorPin, INPUT);
+  pinMode(LEDPin, OUTPUT);
+
+  Serial.print("IR Sensor Pin = ");
+  Serial.println(IRSensorPin);
+  Serial.print("LED Pin = ");
+  Serial.println(LEDPin);
+
+  // Initialization completed successfully
+  Serial.println("Initialization complete");
+}
+  
+// -------------------------------------------------------
+// Subroutine: Set Motor Pins
+// Adapted from Lab 3 - Solution
+// Link: https://moodle.telt.unsw.edu.au/mod/book/view.php?id=5459490&chapterid=403181
+// -------------------------------------------------------
+void setMotorPins(int currentDirection, int pwmDutyCycle){
+  if (currentDirection == 'f') {
+      Serial.println("Forwards");
+      analogWrite(moveMotorPin1, 0);
+      analogWrite(moveMotorPin2, pwmDutyCycle);
+    }
+  if (currentDirection == 'r') {
+    Serial.println("Reverse");
+    analogWrite(moveMotorPin1, pwmDutyCycle);
+    analogWrite(moveMotorPin2, 0);
+  }
+  if (currentDirection == 's') {
+    Serial.println("Stop");
+    analogWrite(moveMotorPin1, 0);
+    analogWrite(moveMotorPin2, 0);
+  }
+}
+
+// -------------------------------------------------------
+// Function: Returns distance based on readings from Ultrasonic
+// Copied from Lecture Notes (Week2) - Scans using the HC SR04 ultrasonic sensor 
+// Link: https://moodle.telt.unsw.edu.au/mod/book/view.php?id=5459490&chapterid=403198
+// ------------------------------------------------------- 
+long readUltrasonic(){
+  unsigned long clockStart;
+  unsigned long clockMax;
+  unsigned long timeMax = 60000;
+  float distance;
+  
+  // Send the 10 usec trigger pulse
+  digitalWrite(sensorTrigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(sensorTrigPin, LOW);
+  
+  // Once triggered it take about 500 usec for the echo pin to go high
+  // Set the max wait time
+  clockMax = micros() + 1000;
+
+  // Wait for the echo pin to go high
+  while ((micros() < clockMax) && (digitalRead(sensorEchoPin) == LOW));
+  
+  // Initialise the echo timer
+  clockStart = micros();
+  clockMax = clockStart + timeMax;
+
+  // Read the sensor delay time by waiting for the echo pin to go low
+  while ((micros() < clockMax) && (digitalRead(sensorEchoPin) == HIGH));
+  
+  // Calculate the distance in cm
+  distance = float(micros() - clockStart) / 58.0;
+  return distance;
+}
+  
+// -------------------------------------------------------
+// Subroutine: Change position of servos
+// -------------------------------------------------------
+void setServoPosition(Servo servo, int posInit, int posFinal){
+  int pos1 = 0;
+  if (posInit < posFinal) {
+    for (pos1 = posInit; pos1 <= posFinal; pos1 += 1) {
+    servo.write(pos1);
+    delay(15); // Wait for the servo to move to the next position
+    }
+  } else {
+    for (pos1 = posInit; pos1 >= posFinal; pos1 -= 1) {
+    servo.write(pos1);
+    delay(15); // Wait for the servo to move to the next position
+    }
+  }
+}
+
+// -------------------------------------------------------
+// The setup() method runs once, when the sketch starts
+// -------------------------------------------------------
+void setup(){ 
+  // Initialize the serial communications
+  Serial.begin(9600);
+
+  // Print the program details
+  Serial.println("-------------------------------------");
+  Serial.println("Program: ACD"); 
+  Serial.println("Initializing ...");
+  
+  // Call a subroutine to initialize the motor pins
+  initializeMotorPins();
+  initializeSensorPins();
+
+  // Set up servo pins
+  servo1.attach(3); // Attach servo1 to pin 3
+  servo2.attach(7); // Attach servo2 to pin 7
+
+  // Initialization completed successfully
+  Serial.println("Initialization complete");
+  
+}
+
+// -------------------------------------------------------
+// The loop() method runs over and over again
+// -------------------------------------------------------
+void loop(){
+  // READING INPUTS FROM ULTRASONIC AND INFRARED SENSORS
+  int IRSensorStatus = digitalRead(IRSensorPin);
+  int pickUpStatus = 0;
+
+  // PICK-UP
+  if (pickUpStatus == 0) {
+    // Start the pump
+    analogWrite(pickUpMotorPin1, 0);
+    analogWrite(pickUpMotorPin2, 128);
+
+    // Servo movement
+    setServoPosition(servo1, 0, 60);
+    setServoPosition(servo2, 0, 90);
+    pickUpStatus = 1;
+    delay(500);
+  }
+
+  while (pickUpStatus == 1) {
+    distance = readUltrasonic(); 
+    Serial.println(distance);
+    // OBSTACLE DETECTION (ULTRASONIC SENSOR)
+    // INPUT: Distance between vehicle and obstacle is less than reversing distance
+    // OUTPUT: Vehicle stops then reverses
+    if (distance <= reverseDistance) {
+      setMotorPins('f', 0); // Stop
+      setMotorPins('f', 102); // Reversing speed = 40%
+      Serial.println("Obstacle detected, Vehicle reversing!");
+    }  
+    // INPUT: Distance between vehicle and obstacle is less than stopping distance
+    // OUTPUT: Vehicle stops
+    else if (distance <= stoppingDistance) {
+      setMotorPins('f', 0); // Stop
+      Serial.println("Obstacle detected, Vehicle stopping!");
+    }
+    // INPUT: Distance detected is greater than reversing and stopping distance
+    // OUPUT: Vehicle moves forward
+    else {
+      setMotorPins('r', 128); // Go, speed = 50%
+      Serial.println("Vehicle moving forward!");
+    }
+
+    // CONTAINER DETECTION FOR DROP-OFF (INFRARED SENSOR)
+    // Adapted from: https://circuitdigest.com/microcontroller-projects/interfacing-ir-sensor-module-with-arduino
+    if (IRSensorStatus == 1) { // 
+      setMotorPins('s', 0); // Stop
+      digitalWrite(LEDPin, LOW); // LED LOW
+      Serial.println("Drop-off Container Detected!");
+      // Servo movement
+      
+      // Stop the pump
+      analogWrite(pickUpMotorPin1, 0);
+      analogWrite(pickUpMotorPin2, 0);
+      // exit(0);
+    }
+    else  {
+      digitalWrite(LEDPin, HIGH); // LED High
+    }
+    delay(500);
+    Serial.println(count);
+    count++;    
+    // exit(0);
+  }
+}
